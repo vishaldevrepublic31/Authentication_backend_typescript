@@ -130,11 +130,27 @@ const profile = async (req: Request, res: Response): Promise<any> => {
     });
 };
 
-const getUsers = async (req: Request, res: Response): Promise<any> => {
+const getUsers = async (req: any, res: Response): Promise<any> => {
     try {
-        const users: IUser[] = await User.find().populate("post");
-        if (!users)
-            return res.status(400).json({ success: false, message: "No any user!" });
+        let query = {};
+
+        if (req.query.search) {
+            const searchRegex = new RegExp(req.query.search, "i");
+            query = {
+                $or: [
+                    { first_name: searchRegex },
+                    { last_name: searchRegex }, 
+                    {email: searchRegex}
+                ],
+            };
+        }
+
+        const users: IUser[] = await User.find(query).populate("post");
+
+        if (!users || users.length === 0) {
+            return res.status(404).json({ success: false, message: "No matching users found!" });
+        }
+
         res.status(200).json({
             success: true,
             users,

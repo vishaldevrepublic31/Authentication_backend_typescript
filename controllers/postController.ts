@@ -10,10 +10,21 @@ interface IPost {
 
 }
 
-const getAllPost = async (req: Request, res: Response): Promise<any> => {
+const getAllPost = async (req: any, res: Response): Promise<any> => {
     try {
-        const posts = await Post.find().populate("creator");
-        if (!posts)
+        let query = {}
+        if(req.query.search){
+            const searchRegex = new RegExp(req.query.search, "i");
+            query = {
+                $or: [
+                    { title: searchRegex },
+                    { description: searchRegex }, 
+                    
+                ],
+            };
+        }
+        const posts = await Post.find(query).populate("creator");
+        if (!posts || posts.length === 0)
             return res
                 .status(400)
                 .json({ success: false, message: "Not any post here!" });
